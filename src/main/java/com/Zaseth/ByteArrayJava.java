@@ -165,6 +165,24 @@ public class ByteArrayJava {
         }
     }
     
+    private void checkIEEE754Float(float value, int offset, int ext, double max, double min) {
+        if (offset + ext > this.length()) {
+            throw new ArrayIndexOutOfBoundsException("Index out of range");
+        }
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("Index out of range");
+        }
+    }
+    
+    private void checkIEEE754Double(double value, int offset, int ext, double max, double min) {
+        if (offset + ext > this.length()) {
+            throw new ArrayIndexOutOfBoundsException("Index out of range");
+        }
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("Index out of range");
+        }
+    }
+    
     public byte get7BitValueSize(int value) {
         return this.get7BitValueSize((long) value);
     }
@@ -696,23 +714,59 @@ public class ByteArrayJava {
     /*
     Write IEEE 754 single-precision (32-bit) and IEEE 754 double-precision (64-bit) functions
      */
-    public void writeFloat(float v) {
-        this.writeInt32(Float.floatToIntBits(v));
+    public void writeFloatCore(byte[] buf, float value, int offset, boolean littleEndian) {
+        value = +value;
+        this.checkIEEE754Float(value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
+        IEEE754 writer = new IEEE754();
+        writer.write(buf, value, offset, littleEndian, 23, 4);
+        this.position += 4;
     }
     
-    public void writeDouble(double v) {
-        this.writeInt64(Double.doubleToLongBits(v));
+    public void writeDoubleCore(byte[] buf, double value, int offset, boolean littleEndian) {
+        value = +value;
+        this.checkIEEE754Double(value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308);
+        IEEE754 writer = new IEEE754();
+        writer.write(buf, value, offset, littleEndian, 52, 8);
+        this.position += 8;
+    }
+    
+    public void writeFloat(float value) {
+        if (this.endian) {
+            this.writeFloatCore(this.data, value, this.position, false);
+        } else {
+            this.writeFloatCore(this.data, value, this.position, true);
+        }
+    }
+    
+    public void writeDouble(double value) {
+        if (this.endian) {
+            this.writeDoubleCore(this.data, value, this.position, false);
+        } else {
+            this.writeDoubleCore(this.data, value, this.position, true);
+        }
     }
     
     /*
     Reads IEEE 754 single-precision (32-bit) and IEEE 754 double-precision (64-bit) functions
      */
-    public double readDouble() {
-        return Double.longBitsToDouble(this.readInt64());
+    public float readFloat() {
+        this.checkOffset(this.position, 4, this.length());
+        IEEE754 reader = new IEEE754();
+        if (this.endian) {
+            return reader.readFloat(this.data, this.position, false, 23, 4);
+        } else {
+            return reader.readFloat(this.data, this.position, true, 23, 4);
+        }
     }
     
-    public float readFloat() {
-        return Float.intBitsToFloat(this.readInt32());
+    public double readDouble() {
+        this.checkOffset(this.position, 8, this.length());
+        IEEE754 reader = new IEEE754();
+        if (this.endian) {
+            return reader.readDouble(this.data, this.position, false, 52, 8);
+        } else {
+            return reader.readDouble(this.data, this.position, true, 52, 8);
+        }
     }
     
     /*
@@ -1006,9 +1060,9 @@ public class ByteArrayJava {
     
     public static void main(String[] args) throws UTFDataFormatException {
         ByteArrayJava wba = new ByteArrayJava();
-        wba.writeBoolean(true);
+        wba.writeDouble(54d);
         ByteArrayJava rba = new ByteArrayJava(wba);
-        System.out.println(rba.readBoolean());
+        System.out.println(rba.readDouble());
         System.out.println(wba.toString());
     }
 }
