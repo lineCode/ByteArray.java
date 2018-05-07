@@ -2,7 +2,10 @@ package com.Zaseth;
 
 import java.io.UTFDataFormatException;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Vector;
 
 public class ByteArrayJava {
     
@@ -1107,11 +1110,7 @@ public class ByteArrayJava {
     
     public static void main(String[] args) throws UTFDataFormatException {
         ByteArrayJava wba = new ByteArrayJava();
-        Vector<Double> test = new Vector<Double>(4, 5);
-        test.add(4d);
-        wba.writeVectorDouble(test, 1);
-        ByteArrayJava rba = new ByteArrayJava(wba);
-        System.out.println(rba.readVectorDouble(1));
+        wba.writeInt8(5);
         System.out.println(wba.toString());
     }
 }
