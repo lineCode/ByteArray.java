@@ -6,3 +6,17 @@ ByteArray for Java (ByteArray.java) is a stable library for writing and reading 
 **If you have any fixes or recommendations, please let me know by sending a pull request or by filling an issue.**
 
 [Documentation](https://github.com/Zaseth/ByteArray.java/wiki)
+
+### Unfinished development notes:
+
+```
+public void writeECMAArray(HashMap<String, Object> contents) throws UTFDataFormatException {
+        for (String key : contents.keySet()) {
+            if (key.matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+")) {
+                this.writeUInt32Fixed(Integer.parseInt(key));
+            } else {
+                this.writeUTF(key);
+            }
+        }
+    }
+```
