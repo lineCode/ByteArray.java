@@ -2,9 +2,7 @@ package com.Zaseth;
 
 import java.io.UTFDataFormatException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class ByteArrayJava {
     
@@ -161,7 +159,7 @@ public class ByteArrayJava {
         }
     }
     
-    private void checkIEEE754Float(float value, int offset, int ext, double max, double min) {
+    private void checkIEEE754(float value, int offset, int ext, double max, double min) {
         if (offset + ext > this.length()) {
             throw new ArrayIndexOutOfBoundsException("Index out of range");
         }
@@ -170,7 +168,7 @@ public class ByteArrayJava {
         }
     }
     
-    private void checkIEEE754Double(double value, int offset, int ext, double max, double min) {
+    private void checkIEEE754(double value, int offset, int ext, double max, double min) {
         if (offset + ext > this.length()) {
             throw new ArrayIndexOutOfBoundsException("Index out of range");
         }
@@ -407,6 +405,20 @@ public class ByteArrayJava {
     public void writeUInt32(int v) {
         v = +v;
         this.checkInt(v, this.position, 4, 0xffffffff, 0);
+        if (this.endian) {
+            this.data[this.position++] = (byte) (v >>> 24);
+            this.data[this.position++] = (byte) (v >>> 16);
+            this.data[this.position++] = (byte) (v >>> 8);
+            this.data[this.position++] = (byte) (v & 0xff);
+        } else {
+            this.data[this.position++] = (byte) (v & 0xff);
+            this.data[this.position++] = (byte) (v >>> 8);
+            this.data[this.position++] = (byte) (v >>> 16);
+            this.data[this.position++] = (byte) (v >>> 24);
+        }
+    }
+    
+    public void writeUInt32Fixed(int v) {
         if (this.endian) {
             this.data[this.position++] = (byte) (v >>> 24);
             this.data[this.position++] = (byte) (v >>> 16);
@@ -712,7 +724,7 @@ public class ByteArrayJava {
      */
     public void writeFloatCore(byte[] buf, float value, int offset, boolean littleEndian) {
         value = +value;
-        this.checkIEEE754Float(value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
+        this.checkIEEE754(value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
         IEEE754 writer = new IEEE754();
         writer.write(buf, value, offset, littleEndian, 23, 4);
         this.position += 4;
@@ -720,7 +732,7 @@ public class ByteArrayJava {
     
     public void writeDoubleCore(byte[] buf, double value, int offset, boolean littleEndian) {
         value = +value;
-        this.checkIEEE754Double(value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308);
+        this.checkIEEE754(value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308);
         IEEE754 writer = new IEEE754();
         writer.write(buf, value, offset, littleEndian, 52, 8);
         this.position += 8;
@@ -1054,11 +1066,52 @@ public class ByteArrayJava {
         return this.readInt8() == 1;
     }
     
+    public void writeVectorInt(Vector<Integer> array, int length) {
+        for (int i = 0; i < length; i++) {
+            this.writeInt32(array.get(i));
+        }
+    }
+    
+    public void writeVectorUInt(Vector<Integer> array, int length) {
+        for (int i = 0; i < length; i++) {
+            this.writeUInt32Fixed(array.get(i));
+        }
+    }
+    
+    public void writeVectorDouble(Vector<Double> array, int length) {
+        for (int i = 0; i < length; i++) {
+            this.writeDouble(array.get(i));
+        }
+    }
+    
+    public int readVectorInt(int length) {
+        for (int i = 0; i < length; i++) {
+            return this.readInt32();
+        }
+        return length;
+    }
+    
+    public int readVectorUInt(int length) {
+        for (int i = 0; i < length; i++) {
+            return this.readUInt32();
+        }
+        return length;
+    }
+    
+    public double readVectorDouble(int length) {
+        for (int i = 0; i < length; i++) {
+            return this.readDouble();
+        }
+        return length;
+    }
+    
     public static void main(String[] args) throws UTFDataFormatException {
         ByteArrayJava wba = new ByteArrayJava();
-        wba.writeDouble(54d);
+        Vector<Double> test = new Vector<Double>(4, 5);
+        test.add(4d);
+        wba.writeVectorDouble(test, 1);
         ByteArrayJava rba = new ByteArrayJava(wba);
-        System.out.println(rba.readDouble());
+        System.out.println(rba.readVectorDouble(1));
         System.out.println(wba.toString());
     }
 }
