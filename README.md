@@ -11,11 +11,11 @@ ByteArray for Java (ByteArray.java) is a stable library for writing and reading 
 
 ```
 public void writeECMAArray(HashMap<String, Object> contents) throws UTFDataFormatException {
-        for (Object key : contents.keySet()) {
-            if (key.toString().matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+")) {
-                this.writeUInt32Fixed(Integer.parseInt(key.toString()));
+        for (String key : contents.keySet()) {
+            if (key.matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+")) {
+                this.writeUInt32Fixed(Integer.parseInt(key));
             } else {
-                this.writeUTF(key.toString());
+                this.writeUTF(key);
             }
         }
     }
