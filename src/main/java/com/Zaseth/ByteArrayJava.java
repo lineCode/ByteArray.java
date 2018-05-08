@@ -2,7 +2,10 @@ package com.Zaseth;
 
 import java.io.UTFDataFormatException;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Vector;
 
 public class ByteArrayJava {
     
@@ -178,7 +181,7 @@ public class ByteArrayJava {
     }
     
     public byte get7BitValueSize(int value) {
-        return this.get7BitValueSize((long) value);
+        return get7BitValueSize((long) value);
     }
     
     public static byte get7BitValueSize(long value) {

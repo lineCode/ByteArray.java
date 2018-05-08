@@ -1,9 +1,8 @@
 package com.Zaseth;
 
-import java.util.Arrays;
-
 import static java.lang.Float.NaN;
-import static jdk.nashorn.internal.objects.Global.Infinity;
+
+import java.util.Arrays;
 
 class IEEE754 {
     public IEEE754() {
