@@ -21,13 +21,13 @@ class Pack {
                 shift -= 7;
             }
         }
-        this.data[this.position++] = (byte) ((value & 0x7F)| 0x80);
+        this.data[this.position++] = (byte) ((value & 0x7F) | 0x80);
     }
     
     public void packIntBigger(int value) {
         int shift = 31 - Integer.numberOfLeadingZeros(value);
         shift -= shift % 7;
-        while(shift != 0) {
+        while (shift != 0) {
             this.data[this.position++] = (byte) ((value >>> shift) & 0x7F);
             shift -= 7;
         }
@@ -37,7 +37,7 @@ class Pack {
     public void packLong(long value) {
         int shift = 63 - Long.numberOfLeadingZeros(value);
         shift -= shift % 7;
-        while(shift != 0) {
+        while (shift != 0) {
             this.data[this.position++] = (byte) ((value >>> shift) & 0x7F);
             shift -= 7;
         }
@@ -54,7 +54,7 @@ class Pack {
                 this.data[this.position++] = (byte) ((value >>> shift) & 0x7F);
                 shift -= 7;
             }
-            this.data[this.position++] = (byte) ((value & 0x7F)| 0x80);
+            this.data[this.position++] = (byte) ((value & 0x7F) | 0x80);
         }
     }
     
@@ -63,7 +63,7 @@ class Pack {
             int value = array[i];
             int shift = 31 - Integer.numberOfLeadingZeros(value);
             shift -= shift % 7;
-            while(shift != 0) {
+            while (shift != 0) {
                 this.data[this.position++] = (byte) ((value >>> shift) & 0x7F);
                 shift -= 7;
             }
@@ -72,13 +72,13 @@ class Pack {
     }
     
     public void packLongArray(long[] array, int fromIndex, int toIndex) {
-        for(int i = fromIndex; i < toIndex; i++) {
+        for (int i = fromIndex; i < toIndex; i++) {
             long value = array[i];
             int shift = 63 - Long.numberOfLeadingZeros(value);
             shift -= shift % 7;
-            while(shift != 0) {
+            while (shift != 0) {
                 this.data[this.position++] = (byte) ((value >>> shift) & 0x7F);
-                shift-=7;
+                shift -= 7;
             }
             this.data[this.position++] = (byte) ((value & 0x7F) | 0x80);
         }

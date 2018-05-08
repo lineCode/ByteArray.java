@@ -2,10 +2,7 @@ package com.Zaseth;
 
 import java.io.UTFDataFormatException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
 public class ByteArrayJava {
     
@@ -1069,48 +1066,75 @@ public class ByteArrayJava {
         return this.readInt8() == 1;
     }
     
-    public void writeVectorInt(Vector<Integer> array, int length) {
-        for (int i = 0; i < length; i++) {
-            this.writeInt32(array.get(i));
+    public void writeVectorInt(int[] array) {
+        this.writeInt8(array.length);
+        for (int i = 0; i < array.length; i++) {
+            this.writeInt32(array[i]);
         }
     }
     
-    public void writeVectorUInt(Vector<Integer> array, int length) {
-        for (int i = 0; i < length; i++) {
-            this.writeUInt32Fixed(array.get(i));
+    public void writeVectorUInt(int[] array) {
+        this.writeInt8(array.length);
+        for (int i = 0; i < array.length; i++) {
+            this.writeUInt32Fixed(array[i]);
         }
     }
     
-    public void writeVectorDouble(Vector<Double> array, int length) {
-        for (int i = 0; i < length; i++) {
-            this.writeDouble(array.get(i));
+    public void writeVectorDouble(Double[] array) {
+        this.writeInt8(array.length);
+        for (int i = 0; i < array.length; i++) {
+            this.writeDouble(array[i]);
         }
     }
     
-    public int readVectorInt(int length) {
-        for (int i = 0; i < length; i++) {
-            return this.readInt32();
+    public void writeVectorString(String[] array) throws UTFDataFormatException {
+        this.writeInt8(array.length);
+        for (int i = 0; i < array.length; i++) {
+            this.writeUTF(array[i]);
         }
-        return length;
     }
     
-    public int readVectorUInt(int length) {
+    public Vector<Integer> readVectorInt() {
+        int length = this.readInt8();
+        Vector<Integer> vector = new Vector<Integer>();
         for (int i = 0; i < length; i++) {
-            return this.readUInt32();
+            vector.add(this.readInt32());
         }
-        return length;
+        return vector;
     }
     
-    public double readVectorDouble(int length) {
+    public Vector<Integer> readVectorUInt() {
+        int length = this.readInt8();
+        Vector<Integer> vector = new Vector<Integer>();
         for (int i = 0; i < length; i++) {
-            return this.readDouble();
+            vector.add(this.readUInt32());
         }
-        return length;
+        return vector;
+    }
+    
+    public Vector<Double> readVectorDouble() {
+        int length = this.readInt8();
+        Vector<Double> vector = new Vector<Double>();
+        for (int i = 0; i < length; i++) {
+            vector.add(this.readDouble());
+        }
+        return vector;
+    }
+    
+    public Vector<String> readVectorString() throws UTFDataFormatException {
+        int length = this.readInt8();
+        Vector<String> vector = new Vector<String>();
+        for (int i = 0; i < length; i++) {
+            vector.add(this.readUTF());
+        }
+        return vector;
     }
     
     public static void main(String[] args) throws UTFDataFormatException {
         ByteArrayJava wba = new ByteArrayJava();
-        wba.writeInt8(5);
+        wba.writeDouble(55.1d); // To be fixed
         System.out.println(wba.toString());
+        ByteArrayJava rba = new ByteArrayJava(wba);
+        System.out.println(rba.readDouble());
     }
 }
