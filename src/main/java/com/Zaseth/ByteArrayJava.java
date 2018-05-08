@@ -50,13 +50,12 @@ public class ByteArrayJava {
     }
     
     /*
-    Set, get and constructor functions
+    Set | Get & Constructor
      */
     public void clear() {
         this.position = 0;
         this.data = new byte[this.BUFFER_SIZE];
     }
-    
     public void clear(byte[] data, int position) {
         this.data = data;
         this.position = position;
@@ -65,7 +64,6 @@ public class ByteArrayJava {
     public void setEndian(boolean e) {
         this.endian = e;
     }
-    
     public boolean getEndian() {
         return this.endian;
     }
@@ -73,7 +71,6 @@ public class ByteArrayJava {
     public int moveLeft(int v) {
         return this.position -= v;
     }
-    
     public int moveRight(int v) {
         return this.position += v;
     }
@@ -81,14 +78,10 @@ public class ByteArrayJava {
     public void grow(int what, int by) {
         this.BUFFER_SIZE = Math.max(this.position + by, this.BUFFER_SIZE);
     }
+    public int clamp(int value, int min, int max) { return Math.max(min, Math.min(max, value)); }
     
-    public int length() {
-        return this.data == null ? 0 : this.data.length;
-    }
+    public int length() { return this.data == null ? 0 : this.data.length; }
     
-    /*
-    Data retrieval functions
-     */
     public int bytesAvailable() {
         int value = this.length() - this.position;
         if (value > this.length() || value < 0) {
@@ -100,17 +93,24 @@ public class ByteArrayJava {
         return value;
     }
     
+    /*
+    Data retrieval
+     */
     @Override
     public String toString() {
-        return this.Debug(new StringBuilder().append("Bytes available: " + this.bytesAvailable() + "\r\nPosition: " + this.position + "\r\nNullbytes: " + this.nullBytes + "\r\nByte stream: " + Arrays.toString(this.data).substring(0, 120)).toString());
+        boolean showFullArray = false;
+        if (showFullArray) {
+            return this.Debug("Bytes available: " + this.bytesAvailable() + "\r\nPosition: " + this.position + "\r\nNullbytes: " + this.nullBytes + "\r\nByte stream: " + Arrays.toString(this.data)).substring(0, 120);
+        } else {
+            return this.Debug("Bytes available: " + this.bytesAvailable() + "\r\nPosition: " + this.position + "\r\nNullbytes: " + this.nullBytes + "\r\nByte stream: " + Arrays.toString(this.data));
+        }
     }
-    
     public String Debug(String debugMessage) {
         return "<DEBUG>\r\n" + debugMessage + "\r\n</DEBUG>";
     }
     
     /*
-    Extra method functions
+    ByteArray as3
      */
     public byte atomicCompareAndSwapIntAt(int byteIndex, int expectedValue, int newValue) {
         byte value = this.data[byteIndex];
@@ -119,7 +119,6 @@ public class ByteArrayJava {
         }
         return value;
     }
-    
     public int atomicCompareAndSwapLength(int expectedLength, int newLength) {
         int prevLength = this.length();
         if (prevLength != expectedLength) {
@@ -137,12 +136,8 @@ public class ByteArrayJava {
     }
     
     /*
-    Help functions
+    Check
      */
-    public static String fromCharCode(int... codePoints) { // https://stackoverflow.com/a/2946081/6636193
-        return new String(codePoints, 0, codePoints.length);
-    }
-    
     private void checkInt(int value, int offset, int ext, int max, int min) {
         this.bytesAvailable();
         if (value > max || value < min) {
@@ -152,7 +147,6 @@ public class ByteArrayJava {
             throw new ArrayIndexOutOfBoundsException("Index argument is out of range");
         }
     }
-    
     private void checkOffset(int offset, int ext, int length) {
         if ((offset % 1) != 0 || offset < 0) {
             throw new IllegalArgumentException("Offset is not uint");
@@ -161,8 +155,7 @@ public class ByteArrayJava {
             throw new ArrayIndexOutOfBoundsException("Trying to access beyond buffer length");
         }
     }
-    
-    private void checkIEEE754(float value, int offset, int ext, double max, double min) {
+    private void checkIEEE754(int offset, int ext) {
         if (offset + ext > this.length()) {
             throw new ArrayIndexOutOfBoundsException("Index out of range");
         }
@@ -171,19 +164,12 @@ public class ByteArrayJava {
         }
     }
     
-    private void checkIEEE754(double value, int offset, int ext, double max, double min) {
-        if (offset + ext > this.length()) {
-            throw new ArrayIndexOutOfBoundsException("Index out of range");
-        }
-        if (offset < 0) {
-            throw new ArrayIndexOutOfBoundsException("Index out of range");
-        }
-    }
-    
+    /*
+    Length calculation
+     */
     public byte get7BitValueSize(int value) {
-        return get7BitValueSize((long) value);
+        return this.get7BitValueSize((long) value);
     }
-    
     public static byte get7BitValueSize(long value) {
         long limit = 0x80;
         byte result = 1;
@@ -195,7 +181,7 @@ public class ByteArrayJava {
     }
     
     /*
-    Writing int and uint functions
+    Int & UInt
      */
     public void writeInt8(int v) {
         v = +v;
@@ -203,11 +189,6 @@ public class ByteArrayJava {
         if (v < 0) v = 0xff + v + 1;
         this.data[this.position++] = (byte) v;
     }
-    
-    public void writeRawByte(int v) {
-        this.data[this.position++] = (byte) v;
-    }
-    
     public void writeInt16(int v) {
         v = +v;
         this.checkInt(v, this.position, 2, 0x7fff, -0x8000);
@@ -219,7 +200,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 8);
         }
     }
-    
     public void writeInt24(int v) {
         v = +v;
         this.checkInt(v, this.position, 3, 0x7fffff, -0x800000);
@@ -233,7 +213,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 16);
         }
     }
-    
     public void writeInt29(int v) {
         if (v < -0x10000000 || v > 0x0fffffff) {
             throw new IllegalArgumentException("Integer must be between -0x10000000 and 0x0fffffff but got " + v + " instead");
@@ -255,7 +234,6 @@ public class ByteArrayJava {
             this.writeInt8(v & 0x7f);
         }
     }
-    
     public void writeInt32(int v) {
         v = +v;
         this.checkInt(v, this.position, 4, 0x7fffffff, -0x80000000);
@@ -272,7 +250,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 24);
         }
     }
-    
     public void writeInt40(long v) {
         v = +v;
         if (this.endian) {
@@ -289,7 +266,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 32);
         }
     }
-    
     public void writeInt48(long v) {
         v = +v;
         if (this.endian) {
@@ -308,7 +284,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 40);
         }
     }
-    
     public void writeInt56(long v) {
         v = +v;
         if (this.endian) {
@@ -329,7 +304,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 48);
         }
     }
-    
     public void writeInt64(long v) {
         v = +v;
         if (this.endian) {
@@ -358,7 +332,6 @@ public class ByteArrayJava {
         this.checkInt(v, this.position, 1, 0xff, 0);
         this.data[this.position++] = (byte) (v & 0xff);
     }
-    
     public void writeUInt16(int v) {
         v = +v;
         this.checkInt(v, this.position, 2, 0xffff, 0);
@@ -370,7 +343,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 8);
         }
     }
-    
     public void writeUInt24(int v) {
         v = +v;
         this.checkInt(v, this.position, 3, 0xffffff, 0);
@@ -384,7 +356,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 16);
         }
     }
-    
     public void writeUInt29(int v) {
         if (128 > v) {
             this.writeInt8(v);
@@ -404,7 +375,6 @@ public class ByteArrayJava {
             throw new IllegalArgumentException("Integer out of range: " + v);
         }
     }
-    
     public void writeUInt32(int v) {
         v = +v;
         this.checkInt(v, this.position, 4, 0xffffffff, 0);
@@ -420,7 +390,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 24);
         }
     }
-    
     public void writeUInt32Fixed(int v) {
         if (this.endian) {
             this.data[this.position++] = (byte) (v >>> 24);
@@ -434,7 +403,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 24);
         }
     }
-    
     public void writeUInt40(long v) {
         v = +v;
         if (this.endian) {
@@ -451,7 +419,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 32);
         }
     }
-    
     public void writeUInt48(long v) {
         v = +v;
         if (this.endian) {
@@ -470,7 +437,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 40);
         }
     }
-    
     public void writeUInt56(long v) {
         v = +v;
         if (this.endian) {
@@ -491,7 +457,6 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >>> 48);
         }
     }
-    
     public void writeUInt64(long v) {
         v = +v;
         if (this.endian) {
@@ -515,18 +480,10 @@ public class ByteArrayJava {
         }
     }
     
-    /*
-    Read int and uint functions
-    */
     public int readInt8() {
         this.checkOffset(this.position, 1, this.length());
         return this.data[this.position++];
     }
-    
-    public byte readRawByte() {
-        return this.data[this.position++];
-    }
-    
     public int readInt16() {
         this.checkOffset(this.position, 2, this.length());
         if (this.endian) {
@@ -535,7 +492,6 @@ public class ByteArrayJava {
             return this.data[this.position++] | this.data[this.position++] << 8;
         }
     }
-    
     public int readInt24() {
         this.checkOffset(this.position, 3, this.length());
         if (this.endian) {
@@ -544,7 +500,6 @@ public class ByteArrayJava {
             return this.data[this.position++] | this.data[this.position++] << 8 | this.data[this.position++] << 16;
         }
     }
-    
     public int readInt29() {
         int total = this.readInt8();
         if (total < 128) {
@@ -568,7 +523,6 @@ public class ByteArrayJava {
         int mask = 1 << 28;
         return -(total & mask) | total;
     }
-    
     public int readInt32() {
         this.checkOffset(this.position, 4, this.length());
         if (this.endian) {
@@ -579,7 +533,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 24;
         }
     }
-    
     public long readInt40() {
         if (this.endian) {
             return this.data[this.position++] << 32 | this.data[this.position++] << 24 | this.data[this.position++] << 16
@@ -589,7 +542,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 24 | this.data[this.position++] << 32;
         }
     }
-    
     public long readInt48() {
         if (this.endian) {
             return this.data[this.position++] << 40 | this.data[this.position++] << 32 | this.data[this.position++] << 24
@@ -599,7 +551,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 24 | this.data[this.position++] << 32 | this.data[this.position++] << 40;
         }
     }
-    
     public long readInt56() {
         if (this.endian) {
             return this.data[this.position++] << 48 | this.data[this.position++] << 40 | this.data[this.position++] << 32
@@ -611,16 +562,15 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 48;
         }
     }
-    
     public long readInt64() {
         if (this.endian) {
-            return this.data[this.position++] << 56 | this.data[this.position++] << 48 | this.data[this.position++] << 40
-                    | this.data[this.position++] << 32 | this.data[this.position++] << 24 | this.data[this.position++] << 16
-                    | this.data[this.position++] << 8 | this.data[this.position++];
+            return (((long)this.data[this.position++] & 0xFF) << 56) | (((long)this.data[this.position++] & 0xFF) << 48) | (((long)this.data[this.position++] & 0xFF) << 40)
+                    | (((long)this.data[this.position++] & 0xFF) << 32) | (((long)this.data[this.position++] & 0xFF) << 24) | (((long)this.data[this.position++] & 0xFF) << 16)
+                    | (((long)this.data[this.position++] & 0xFF) << 8) | ((long)this.data[this.position++] & 0xFF);
         } else {
-            return this.data[this.position++] | this.data[this.position++] << 8 | this.data[this.position++] << 16
-                    | this.data[this.position++] << 24 | this.data[this.position++] << 32 | this.data[this.position++] << 40
-                    | this.data[this.position++] << 48 | this.data[this.position++] << 56;
+            return ((long)this.data[this.position++] & 0xFF) | (((long)this.data[this.position++] & 0xFF) << 8) | (((long)this.data[this.position++] & 0xFF) << 16)
+                    | (((long)this.data[this.position++] & 0xFF) << 24) | (((long)this.data[this.position++] & 0xFF) << 32) | (((long)this.data[this.position++] & 0xFF) << 40)
+                    | (((long)this.data[this.position++] & 0xFF) << 48) | (((long)this.data[this.position++] & 0xFF) << 56);
         }
     }
     
@@ -628,7 +578,6 @@ public class ByteArrayJava {
         this.checkOffset(this.position, 1, this.length());
         return this.data[this.position++] & 0xff;
     }
-    
     public int readUInt16() {
         this.checkOffset(this.position, 2, this.length());
         if (this.endian) {
@@ -637,7 +586,6 @@ public class ByteArrayJava {
             return this.data[this.position++] & 0xff | this.data[this.position++] << 8;
         }
     }
-    
     public int readUInt24() {
         this.checkOffset(this.position, 3, this.length());
         if (this.endian) {
@@ -646,7 +594,6 @@ public class ByteArrayJava {
             return this.data[this.position++] & 0xff | this.data[this.position++] << 8 | this.data[this.position++] << 16;
         }
     }
-    
     public int readUInt29() {
         int b = this.readUInt8();
         if (b < 128) {
@@ -666,7 +613,6 @@ public class ByteArrayJava {
         b = this.readUInt8();
         return (value | b);
     }
-    
     public int readUInt32() {
         this.checkOffset(this.position, 4, this.length());
         if (this.endian) {
@@ -677,7 +623,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 24;
         }
     }
-    
     public long readUInt40() {
         if (this.endian) {
             return this.data[this.position++] << 32 | this.data[this.position++] << 24 | this.data[this.position++] << 16
@@ -687,7 +632,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 24 | this.data[this.position++] << 32;
         }
     }
-    
     public long readUInt48() {
         if (this.endian) {
             return this.data[this.position++] << 40 | this.data[this.position++] << 32 | this.data[this.position++] << 24
@@ -697,7 +641,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 24 | this.data[this.position++] << 32 | this.data[this.position++] << 40;
         }
     }
-    
     public long readUInt56() {
         if (this.endian) {
             return this.data[this.position++] << 48 | this.data[this.position++] << 40 | this.data[this.position++] << 32
@@ -709,7 +652,6 @@ public class ByteArrayJava {
                     | this.data[this.position++] << 48;
         }
     }
-    
     public long readUInt64() {
         if (this.endian) {
             return this.data[this.position++] << 56 | this.data[this.position++] << 48 | this.data[this.position++] << 40
@@ -723,65 +665,30 @@ public class ByteArrayJava {
     }
     
     /*
-    Write IEEE 754 single-precision (32-bit) and IEEE 754 double-precision (64-bit) functions
+    Float & Double
      */
-    public void writeFloatCore(byte[] buf, float value, int offset, boolean littleEndian) {
-        value = +value;
-        this.checkIEEE754(value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
-        IEEE754 writer = new IEEE754();
-        writer.write(buf, value, offset, littleEndian, 23, 4);
-        this.position += 4;
-    }
-    
-    public void writeDoubleCore(byte[] buf, double value, int offset, boolean littleEndian) {
-        value = +value;
-        this.checkIEEE754(value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308);
-        IEEE754 writer = new IEEE754();
-        writer.write(buf, value, offset, littleEndian, 52, 8);
-        this.position += 8;
-    }
-    
     public void writeFloat(float value) {
-        if (this.endian) {
-            this.writeFloatCore(this.data, value, this.position, false);
-        } else {
-            this.writeFloatCore(this.data, value, this.position, true);
-        }
+        value = +value;
+        this.checkIEEE754(this.position, 4);
+        this.writeInt32(Float.floatToIntBits(value));
     }
-    
     public void writeDouble(double value) {
-        if (this.endian) {
-            this.writeDoubleCore(this.data, value, this.position, false);
-        } else {
-            this.writeDoubleCore(this.data, value, this.position, true);
-        }
+        value = +value;
+        this.checkIEEE754(this.position, 8);
+        this.writeInt64(Double.doubleToLongBits(value));
     }
     
-    /*
-    Reads IEEE 754 single-precision (32-bit) and IEEE 754 double-precision (64-bit) functions
-     */
     public float readFloat() {
         this.checkOffset(this.position, 4, this.length());
-        IEEE754 reader = new IEEE754();
-        if (this.endian) {
-            return reader.readFloat(this.data, this.position, false, 23, 4);
-        } else {
-            return reader.readFloat(this.data, this.position, true, 23, 4);
-        }
+        return Float.intBitsToFloat(this.readInt32());
     }
-    
     public double readDouble() {
         this.checkOffset(this.position, 8, this.length());
-        IEEE754 reader = new IEEE754();
-        if (this.endian) {
-            return reader.readDouble(this.data, this.position, false, 52, 8);
-        } else {
-            return reader.readDouble(this.data, this.position, true, 52, 8);
-        }
+        return java.lang.Double.longBitsToDouble(this.readInt64());
     }
     
     /*
-    Writing varint and varuint functions
+    VarInt & VarUInt
      */
     public void write7BitEncodedInt(int value) {
         byte shift = (byte) ((this.get7BitValueSize(value) - 1) * 7);
@@ -796,7 +703,6 @@ public class ByteArrayJava {
         }
         this.writeInt8((max ? (value & 0xFF) : (value & 0x7F)));
     }
-    
     public void write7BitEncodedLong(long value) {
         byte shift = (byte) ((this.get7BitValueSize(value) - 1) * 7);
         boolean max = (shift >= 63);
@@ -821,7 +727,6 @@ public class ByteArrayJava {
             }
         }
     }
-    
     public void writeVarInt64(long value) {
         while (true) {
             if ((value & ~0x7F) == 0) {
@@ -835,16 +740,12 @@ public class ByteArrayJava {
     }
     
     public void writeVarUInt32(int value) {
-        this.writeVarInt32(value << 1 ^ value >> 31); // EncodeZigZag32
+        this.writeVarInt32(value << 1 ^ value >> 31);
     }
-    
     public void writeVarUInt64(long value) {
-        this.writeVarInt64(value << 1 ^ value >> 63); // EncodeZigZag64
+        this.writeVarInt64(value << 1 ^ value >> 63);
     }
     
-    /*
-    Reading varint and varuint functions
-     */
     public int read7BitEncodedInt() {
         int n = 0;
         int b = this.readUInt8();
@@ -859,7 +760,6 @@ public class ByteArrayJava {
         result |= b;
         return result;
     }
-    
     public long read7BitEncodedLong() {
         int n = 0;
         int b = this.readUInt8();
@@ -895,7 +795,6 @@ public class ByteArrayJava {
                     result |= (tmp & 0x7f) << 21;
                     result |= (tmp = (byte) this.readInt8()) << 28;
                     if (tmp < 0) {
-                        // Discard upper 32 bits.
                         for (int i = 0; i < 5; i++) {
                             if (this.readInt8() >= 0) {
                                 return result;
@@ -907,7 +806,6 @@ public class ByteArrayJava {
         }
         return result;
     }
-    
     public long readVarInt64() {
         int shift = 0;
         long result = 0;
@@ -923,15 +821,14 @@ public class ByteArrayJava {
     }
     
     public int readVarUInt32() {
-        return this.readVarInt32() >>> 1 ^ -(this.readVarInt32() & 1); // DecodeZigZag32
+        return this.readVarInt32() >>> 1 ^ -(this.readVarInt32() & 1);
     }
-    
     public long readVarUInt64() {
-        return this.readVarInt64() >>> 1 ^ -(this.readVarInt64() & 1L); // DecodeZigZag64
+        return this.readVarInt64() >>> 1 ^ -(this.readVarInt64() & 1L);
     }
     
     /*
-    Extra write functions
+    Extra
      */
     public void writeUTF(String s) throws UTFDataFormatException {
         int utfLength = 0;
@@ -963,23 +860,19 @@ public class ByteArrayJava {
             }
         }
     }
-    
     public void writeMultiByte(String v, String charset) {
         Charset cs = Charset.forName(charset);
         if (this.endian) {
             if (charset.equals("UTF-16LE") || charset.equals("UTF-32LE")) {
-                throw new IllegalArgumentException("Unmatched charset for current endian"); // Using Big endian but trying to use Little endian
-                // charset
+                throw new IllegalArgumentException("Unmatched charset for current endian"); // Using Big endian but trying to use Little endian charset
             }
         } else {
             if (charset.equals("UTF-16BE") || charset.equals("UTF-32BE")) {
-                throw new IllegalArgumentException("Unmatched charset for current endian"); // Using Little endian but trying to use Big endian
-                // charset
+                throw new IllegalArgumentException("Unmatched charset for current endian"); // Using Little endian but trying to use Big endian charset
             }
         }
-        this.writeInt8Array(v.getBytes(cs)); // Converts the string into bytes
+        this.writeInt8Array(v.getBytes(cs));
     }
-    
     public void writeInt8Array(byte[] v) {
         int var3 = v.length;
         for (int var4 = 0; var4 < var3; ++var4) {
@@ -990,7 +883,6 @@ public class ByteArrayJava {
             }
         }
     }
-    
     public void writeBytes(byte bytes[], int offset, int length) {
         if ((offset < 0) || (offset > bytes.length) || (length < 0) || ((offset + length) > bytes.length) || ((offset + length) < 0)) {
             throw new IndexOutOfBoundsException();
@@ -1000,7 +892,6 @@ public class ByteArrayJava {
         System.arraycopy(bytes, offset, this.data, this.position, length);
         this.position = this.position + length;
     }
-    
     public void writeBoolean(boolean v) {
         if (v) {
             this.writeInt8(1);
@@ -1009,9 +900,6 @@ public class ByteArrayJava {
         }
     }
     
-    /*
-    Extra read functions
-     */
     public String readUTF() throws UTFDataFormatException {
         int utfLength = this.readInt16() & 0xffff;
         int goalPosition = this.position + utfLength;
@@ -1042,7 +930,6 @@ public class ByteArrayJava {
         }
         return string.toString();
     }
-    
     public List<Character> readMultiByte(int length) {
         List<Character> array = new ArrayList<Character>();
         for (int i = 0; i < length; i++) {
@@ -1050,7 +937,6 @@ public class ByteArrayJava {
         }
         return array;
     }
-    
     public List<Integer> readInt8Array(int length) {
         ArrayList<Integer> array = new ArrayList<Integer>();
         for (int i = 0; i < length; i++) {
@@ -1058,38 +944,36 @@ public class ByteArrayJava {
         }
         return array;
     }
-    
     public byte[] readBytes(int length) {
         byte bytes[] = Arrays.copyOfRange(this.data, this.position, this.position + length);
         this.position += length;
         return bytes;
     }
-    
     public boolean readBoolean() {
         return this.readInt8() == 1;
     }
     
+    /*
+    Vector
+     */
     public void writeVectorInt(int[] array) {
         this.writeInt8(array.length);
         for (int i = 0; i < array.length; i++) {
             this.writeInt32(array[i]);
         }
     }
-    
     public void writeVectorUInt(int[] array) {
         this.writeInt8(array.length);
         for (int i = 0; i < array.length; i++) {
             this.writeUInt32Fixed(array[i]);
         }
     }
-    
     public void writeVectorDouble(Double[] array) {
         this.writeInt8(array.length);
         for (int i = 0; i < array.length; i++) {
             this.writeDouble(array[i]);
         }
     }
-    
     public void writeVectorString(String[] array) throws UTFDataFormatException {
         this.writeInt8(array.length);
         for (int i = 0; i < array.length; i++) {
@@ -1105,7 +989,6 @@ public class ByteArrayJava {
         }
         return vector;
     }
-    
     public Vector<Integer> readVectorUInt() {
         int length = this.readInt8();
         Vector<Integer> vector = new Vector<Integer>();
@@ -1114,7 +997,6 @@ public class ByteArrayJava {
         }
         return vector;
     }
-    
     public Vector<Double> readVectorDouble() {
         int length = this.readInt8();
         Vector<Double> vector = new Vector<Double>();
@@ -1123,7 +1005,6 @@ public class ByteArrayJava {
         }
         return vector;
     }
-    
     public Vector<String> readVectorString() throws UTFDataFormatException {
         int length = this.readInt8();
         Vector<String> vector = new Vector<String>();
@@ -1135,9 +1016,11 @@ public class ByteArrayJava {
     
     public static void main(String[] args) throws UTFDataFormatException {
         ByteArrayJava wba = new ByteArrayJava();
-        wba.writeDouble(55.1d); // To be fixed
+        wba.writeInt32(55);
+        wba.writeInt32(56);
         System.out.println(wba.toString());
         ByteArrayJava rba = new ByteArrayJava(wba);
-        System.out.println(rba.readDouble());
+        System.out.println(rba.readInt32());
+        System.out.println(rba.readInt32());
     }
 }
