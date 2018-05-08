@@ -38,7 +38,7 @@ class IEEE754 {
         if (e == 0) {
             e = 1 - eBias;
         } else if (e == eMax) {
-            return m < 0 ? NaN : (float) ((xd ? -1 : 1) * Infinity);
+            return m < 0 ? NaN : (float) ((xd ? -1 : 1) * Float.POSITIVE_INFINITY);
         } else {
             m = (int) (m + Math.pow(2, mLen));
             e = e - eBias;
@@ -74,7 +74,7 @@ class IEEE754 {
         if (e == 0) {
             e = 1 - eBias;
         } else if (e == eMax) {
-            return m < 0 ? NaN : ((xd ? -1 : 1) * Infinity);
+            return m < 0 ? NaN : ((xd ? -1 : 1) * Float.POSITIVE_INFINITY);
         } else {
             m = (m + Math.pow(2, mLen));
             e = e - eBias;
@@ -142,7 +142,7 @@ class IEEE754 {
         int d = isLE ? 1 : -1;
         int s = value < 0 || (value == 0 && 1 / value < 0) ? 1 : 0;
         value = Math.abs(value);
-        if (value == NaN || value == Infinity) {
+        if (value == NaN || value == Float.POSITIVE_INFINITY) {
             m = Double.isNaN(value) ? 1 : 0;
             e = eMax;
         } else {
