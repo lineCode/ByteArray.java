@@ -2,10 +2,7 @@ package com.Zaseth;
 
 import java.io.UTFDataFormatException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
 public class ByteArrayJava {
     
@@ -61,23 +58,13 @@ public class ByteArrayJava {
         this.position = position;
     }
     
-    public void setEndian(boolean e) {
-        this.endian = e;
-    }
-    public boolean getEndian() {
-        return this.endian;
-    }
+    public void setEndian(boolean e) { this.endian = e; }
+    public boolean getEndian() { return this.endian; }
     
-    public int moveLeft(int v) {
-        return this.position -= v;
-    }
-    public int moveRight(int v) {
-        return this.position += v;
-    }
+    public int moveLeft(int v) { return this.position -= v; }
+    public int moveRight(int v) { return this.position += v; }
     
-    public void grow(int what, int by) {
-        this.BUFFER_SIZE = Math.max(this.position + by, this.BUFFER_SIZE);
-    }
+    public void grow(int what, int by) { this.BUFFER_SIZE = Math.max(this.position + by, this.BUFFER_SIZE); }
     public int clamp(int value, int min, int max) { return Math.max(min, Math.min(max, value)); }
     
     public int length() { return this.data == null ? 0 : this.data.length; }
@@ -93,6 +80,46 @@ public class ByteArrayJava {
         return value;
     }
     
+    public void swap(int n, int m) {
+        byte i = this.data[n];
+        this.data[n] = this.data[m];
+        this.data[m] = i;
+    }
+    public byte[] swap16() {
+        int length = this.length();
+        if (length % 2 != 0) {
+            throw new IllegalArgumentException("Byte stream size must be a multiple of 16-bits");
+        }
+        for (int i = 0; i < length; i += 2) {
+            this.swap(i, i + 1);
+        }
+        return this.data;
+    }
+    public byte[] swap32() {
+        int length = this.length();
+        if (length % 4 != 0) {
+            throw new IllegalArgumentException("Byte stream size must be a multiple of 32-bits");
+        }
+        for (int i = 0; i < length; i += 4) {
+            this.swap(i, i + 3);
+            this.swap(i + 1, i + 2);
+        }
+        return this.data;
+    }
+    public byte[] swap64() {
+        int length = this.length();
+        if (length % 8 != 0) {
+            throw new IllegalArgumentException("Byte stream size must be a multiple of 64-bits");
+        }
+        for (int i = 0; i < length; i += 8) {
+            this.swap( i, i + 7);
+            this.swap( i + 1, i + 6);
+            this.swap( i + 2, i + 5);
+            this.swap( i + 3, i + 4);
+        }
+        return this.data;
+    }
+    
     /*
     Data retrieval
      */
@@ -105,9 +132,7 @@ public class ByteArrayJava {
             return this.Debug("Bytes available: " + this.bytesAvailable() + "\r\nPosition: " + this.position + "\r\nNullbytes: " + this.nullBytes + "\r\nByte stream: " + Arrays.toString(this.data));
         }
     }
-    public String Debug(String debugMessage) {
-        return "<DEBUG>\r\n" + debugMessage + "\r\n</DEBUG>";
-    }
+    public String Debug(String debugMessage) { return "<DEBUG>\r\n" + debugMessage + "\r\n</DEBUG>"; }
     
     /*
     ByteArray as3
@@ -139,6 +164,15 @@ public class ByteArrayJava {
     Check
      */
     private void checkInt(int value, int offset, int ext, int max, int min) {
+        this.bytesAvailable();
+        if (value > max || value < min) {
+            throw new ArrayIndexOutOfBoundsException("Value argument is out of bounds");
+        }
+        if (offset + ext > this.length()) {
+            throw new ArrayIndexOutOfBoundsException("Index argument is out of range");
+        }
+    }
+    private void checkInt(int value, int offset, int ext, double max, double min) {
         this.bytesAvailable();
         if (value > max || value < min) {
             throw new ArrayIndexOutOfBoundsException("Value argument is out of bounds");
@@ -183,6 +217,41 @@ public class ByteArrayJava {
     /*
     Int & UInt
      */
+    public void writeIntBE(int value, int offset, int byteLength) {
+        value = +value;
+        double limit = Math.pow(2, (8 * byteLength) - 1);
+        this.checkInt(value, offset, byteLength, limit -1, -limit);
+        int i = byteLength - 1;
+        double mul = 1 * 1.0;
+        int sub = 0;
+        this.data[offset + i] = (byte) ((byte) value & 0xFF);
+        while (--i >= 0) {
+            mul *= 0x100;
+            if (value < 0 && sub == 0 && this.data[offset + i + 1] != 0) {
+                sub = 1;
+            }
+            this.data[offset + i] = (byte) (((byte) ((value / mul))) - sub & 0xFF);
+        }
+        this.position = offset + byteLength;
+    }
+    public void writeIntLE(int value, int offset, int byteLength) {
+        value = +value;
+        double limit = Math.pow(2, (8 * byteLength) - 1);
+        this.checkInt(value, offset, byteLength, limit -1, -limit);
+        int i = 0;
+        double mul = 1 * 1.0;
+        int sub = 0;
+        this.data[offset] = (byte) ((byte) value & 0xFF);
+        while (++i < byteLength) {
+            mul *= 0x100;
+            if (value < 0 && sub == 0 && this.data[offset + i - 1] != 0) {
+                sub = 1;
+            }
+            this.data[offset + i] = (byte) (((byte) ((value / mul))) - sub & 0xFF);
+        }
+        this.position = offset + byteLength;
+    }
+    
     public void writeInt8(int v) {
         v = +v;
         this.checkInt(v, this.position, 1, 0x7f, -0x80);
@@ -325,6 +394,33 @@ public class ByteArrayJava {
             this.data[this.position++] = (byte) (v >> 48);
             this.data[this.position++] = (byte) (v >> 56);
         }
+    }
+    
+    public void writeUIntBE(int value, int offset, int byteLength) {
+        value = +value;
+        double limit = Math.pow(2, (8 * byteLength) - 1);
+        this.checkInt(value, offset, byteLength, limit, 0);
+        int i = byteLength - 1;
+        double mul = 1 * 1.0;
+        this.data[offset + i] = (byte) ((byte) value & 0xFF);
+        while (--i >= 0) {
+            mul *= 0x100;
+            this.data[offset + i] = (byte) (((byte) ((value / mul))) & 0xFF);
+        }
+        this.position = offset + byteLength;
+    }
+    public void writeUIntLE(int value, int offset, int byteLength) {
+        value = +value;
+        double limit = Math.pow(2, (8 * byteLength) - 1);
+        this.checkInt(value, offset, byteLength, limit, 0);
+        double mul = 1 * 1.0;
+        int i = 0;
+        this.data[offset] = (byte) ((byte) value & 0xFF);
+        while (++i < byteLength) {
+            mul *= 0x100;
+            this.data[offset + i] = (byte) (((byte) ((value / mul))) & 0xFF);
+        }
+        this.position = offset + byteLength;
     }
     
     public void writeUInt8(int v) {
@@ -480,6 +576,37 @@ public class ByteArrayJava {
         }
     }
     
+    public int readIntBE(int offset, int byteLength) {
+        this.checkOffset(offset, byteLength, this.length());
+        int i = byteLength;
+        double mul = 1 * 1.0;
+        int val = this.data[offset + --i];
+        while (i > 0) {
+            mul *= 0x100;
+            val += this.data[offset + --i] * mul;
+        }
+        mul *= 0x80;
+        if (val >= mul) {
+            val -= Math.pow(2, 8 * byteLength);
+        }
+        return val;
+    }
+    public int readIntLE(int offset, int byteLength) {
+        this.checkOffset(offset, byteLength, this.length());
+        int val = this.data[offset];
+        double mul = 1 * 1.0;
+        int i = 0;
+        while (++i < byteLength) {
+            mul *= 0x100;
+            val += this.data[offset + i] * mul;
+        }
+        mul *= 0x80;
+        if (val >= mul) {
+            val -= Math.pow(2, 8 * byteLength);
+        }
+        return val;
+    }
+    
     public int readInt8() {
         this.checkOffset(this.position, 1, this.length());
         return this.data[this.position++];
@@ -572,6 +699,28 @@ public class ByteArrayJava {
                     | (((long)this.data[this.position++] & 0xFF) << 24) | (((long)this.data[this.position++] & 0xFF) << 32) | (((long)this.data[this.position++] & 0xFF) << 40)
                     | (((long)this.data[this.position++] & 0xFF) << 48) | (((long)this.data[this.position++] & 0xFF) << 56);
         }
+    }
+    
+    public int readUIntBE(int offset, int byteLength) {
+        this.checkOffset(offset, byteLength, this.length());
+        int val = this.data[offset + --byteLength];
+        double mul = 1 * 1.0;
+        while (byteLength > 0) {
+            mul *= 0x100;
+            val += this.data[offset + --byteLength] * mul;
+        }
+        return val;
+    }
+    public int readUIntLE(int offset, int byteLength) {
+        this.checkOffset(offset, byteLength, this.length());
+        int val = this.data[offset];
+        double mul = 1 * 1.0;
+        int i = 0;
+        while (++i < byteLength) {
+            mul *= 0x100;
+            val += this.data[offset + i] * mul;
+        }
+        return val;
     }
     
     public int readUInt8() {
@@ -900,6 +1049,10 @@ public class ByteArrayJava {
         }
     }
     
+    public void writeDate(Date d)  {
+        this.writeInt64(d.getTime());
+    }
+    
     public String readUTF() throws UTFDataFormatException {
         int utfLength = this.readInt16() & 0xffff;
         int goalPosition = this.position + utfLength;
@@ -951,6 +1104,10 @@ public class ByteArrayJava {
     }
     public boolean readBoolean() {
         return this.readInt8() == 1;
+    }
+    
+    public Date readDate() {
+        return new Date(this.readInt64());
     }
     
     /*
@@ -1016,11 +1173,9 @@ public class ByteArrayJava {
     
     public static void main(String[] args) throws UTFDataFormatException {
         ByteArrayJava wba = new ByteArrayJava();
-        wba.writeInt32(55);
-        wba.writeInt32(56);
+        wba.writeDate(new Date());
         System.out.println(wba.toString());
         ByteArrayJava rba = new ByteArrayJava(wba);
-        System.out.println(rba.readInt32());
-        System.out.println(rba.readInt32());
+        System.out.println(rba.readDate());
     }
 }
